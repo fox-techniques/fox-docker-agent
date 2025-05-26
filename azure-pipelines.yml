@@ -1,0 +1,34 @@
+trigger:
+  - main
+
+stages:
+  - stage: TestAndBuild
+    displayName: "Test and Build with UV"
+    jobs:
+      - job: uv_test
+        displayName: "Run tests using uv"
+        strategy:
+          matrix:
+            Python310:
+              python_version: '3.10'
+            Python311:
+              python_version: '3.11'
+            Python312:
+              python_version: '3.12'
+        pool:
+          name: azdoba-pool
+        steps:
+        - script: |
+            echo "🔧 Using Python $(python_version)"
+            uv venv --python=$(python_version)
+
+            echo "📦 Installing uv and dev tools inside the venv..."
+            uv pip install uv
+            uv pip install -e ".[dev]" pytest
+
+            echo "🧪 Running tests..."
+            uv run pytest
+
+            echo "🏗 Building package with uv..."
+            uv run uv build
+          displayName: "🪄 Test and Build with UV and Python $(python_version)"

@@ -1,0 +1,15 @@
+
+services:
+  azdo-agent:
+    build: .
+    env_file:
+      - .env
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+    networks:
+      - azdo-net
+
+networks:
+  azdo-net:
+    driver: bridge
