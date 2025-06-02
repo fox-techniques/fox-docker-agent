@@ -2,8 +2,8 @@
 
 ## 🧪 Azure DevOps Self-hosted Docker Build Agent + Python Template with `uv`
 
-[![Python](https://img.shields.io/badge/Python-3.10%2B-darkcyan)](https://pypi.org/project/irene-sankey/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-orange.svg)](https://github.com/fox-techniques/irene-sankey/blob/main/LICENSE)
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-orange.svg)](https://github.com/fox-techniques/fox-docker-agent/blob/main/LICENSE)
 [![GitHub](https://img.shields.io/badge/GitHub-fox--docker--agent-181717?logo=github)](https://github.com/fox-techniques/fox-docker-agent)
 
 This repository provides a ready-to-use setup for a self-hosted Azure DevOps agent in Docker, optimized for Python projects using uv for dependency management and builds. The agent supports multiple Python versions using pyenv, and can be easily deployed with Docker Compose.
