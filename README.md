@@ -51,7 +51,7 @@ Edit `.env` file (create it if missing):
 ```bash
 AZP_URL=https://dev.azure.com/YOUR_ORG
 AZP_TOKEN=your_pat_token
-AZP_POOL=azdoba-pool
+AZP_POOL=your_azure_devops_pool
 ```
 
 Then run the agent:
