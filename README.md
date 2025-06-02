@@ -40,8 +40,8 @@ This repository provides a ready-to-use setup for a self-hosted Azure DevOps age
 1. Clone the repository
 
 ```bash
-git clone https://dev.azure.com/YOUR_ORG/YOUR_PROJECT/_git/YOUR_REPO
-cd YOUR_REPO
+git clone https://github.com/fox-techniques/fox-docker-agent.git
+cd fox-docker-agent
 ```
 
 2. Set up the Agent
