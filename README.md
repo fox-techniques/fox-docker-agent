@@ -1,6 +1,6 @@
 # fox-docker-agent
 
-## 🧪 Azure DevOps Self-hosted Docker Build Agent + Python Template with `uv`
+## Azure DevOps Self-hosted Docker Build Agent + Python Template with `uv`
 
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-orange.svg)](https://github.com/fox-techniques/fox-docker-agent/blob/main/LICENSE)
