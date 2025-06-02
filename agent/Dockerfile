@@ -1,70 +1,49 @@
-FROM ubuntu:22.04
+# Base image with Python
+FROM python:3.10-slim
 
-ENV DEBIAN_FRONTEND=noninteractive
 ARG AGENT_VERSION=4.255.0
+ENV DEBIAN_FRONTEND=noninteractive
 
-# 1. Install system dependencies
+# 1. Install required system dependencies
 RUN apt-get update && apt-get install -y \
-    curl git unzip sudo build-essential \
-    libssl-dev zlib1g-dev libbz2-dev libreadline-dev \
-    libsqlite3-dev libncursesw5-dev xz-utils tk-dev \
-    libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev \
-    ca-certificates docker.io
+    curl git unzip sudo docker.io procps \
+    libicu-dev libssl-dev libkrb5-3 zlib1g \
+    ca-certificates && \
+    apt-get clean
 
-RUN add-apt-repository ppa:git-core/ppa -y && \
-    apt-get update && \
-    apt-get install -y git
-
-# 2. Create agent user early so we can assign permissions later
+# 2. Create user and allow Docker access
 RUN useradd -m -s /bin/bash azdo && usermod -aG docker azdo
 
-# 3. Install pyenv for managing Python versions
-ENV PYENV_ROOT=/opt/pyenv
-ENV PATH="$PYENV_ROOT/bin:$PATH"
+# 3. Install `uv` globally for azdo user
+USER azdo
+RUN curl -Ls https://astral.sh/uv/install.sh | bash
 
-RUN git clone https://github.com/pyenv/pyenv.git $PYENV_ROOT && \
-    $PYENV_ROOT/plugins/python-build/install.sh && \
-    chown -R azdo:azdo $PYENV_ROOT
+# 4. Add uv to PATH
+ENV PATH="/home/azdo/.local/bin:$PATH"
 
-# 4. Preinstall a Python version (optional for faster builds)
-RUN bash -c 'export PYENV_ROOT=/opt/pyenv && export PATH="$PYENV_ROOT/bin:$PATH" && \
-    eval "$(pyenv init --path)" && \
-    pyenv install 3.10.13 && pyenv global 3.10.13'
-
-# 5. Install uv and link it
-RUN curl -Ls https://astral.sh/uv/install.sh | bash && \
-    ln -s ~/.local/bin/uv /usr/local/bin/uv
-
-# 6. Set working directory for the agent
+# 5. Switch back to root and prepare agent directory
+USER root
 WORKDIR /azdo
 
-# 7. Download Azure DevOps agent
+# 6. Download and extract Azure DevOps agent
 RUN curl -Ls "https://vstsagentpackage.azureedge.net/agent/${AGENT_VERSION}/vsts-agent-linux-x64-${AGENT_VERSION}.tar.gz" \
     -o agent.tar.gz && \
     tar -xzf agent.tar.gz && \
     chmod +x ./config.sh ./run.sh ./bin/Agent.Listener && \
     rm agent.tar.gz
 
-# 8. Copy start script and fix permissions before switching users
-COPY start.sh .
-RUN chmod +x start.sh && chown azdo:azdo start.sh
+# 7. Copy start script into container
+COPY start.sh /azdo/start.sh
+RUN chmod +x /azdo/start.sh && chown azdo:azdo /azdo/start.sh
 
-# 9. Switch to azdo user
+# 8. Add Docker healthcheck
+HEALTHCHECK --interval=30s --timeout=10s --start-period=20s CMD pgrep Agent.Listener || exit 1
+
+# 9. Use persistent volume for agent state and logs
+VOLUME ["/azdo/_work", "/azdo/_diag", "/azdo/logs"]
+
+# 10. Finalize container run as azdo user
 USER azdo
 WORKDIR /azdo
 
-
-# 10. Install uv as azdo user
-USER azdo
-RUN curl -Ls https://astral.sh/uv/install.sh | bash
-
-# 11. Create symlink as root
-USER root
-RUN ln -sf /home/azdo/.local/bin/uv /usr/local/bin/uv
-
-# 12. Return to azdo for execution
-USER azdo
-WORKDIR /azdo
-
-# 13. Launch the agent
-ENTRYPOINT ["./start.sh"]
+ENTRYPOINT ["/azdo/start.sh"]

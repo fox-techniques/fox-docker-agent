@@ -1,15 +1,24 @@
+version: '3.8'
 
 services:
   azdo-agent:
-    build: .
-    env_file:
-      - .env
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: azdo-agent
+    environment:
+      AZP_URL: https://dev.azure.com/foxtechniques
+      AZP_TOKEN: ${AZP_TOKEN}
+      AZP_POOL: azdoba-pool
+      AZP_AGENT_NAME: azdo-agent-${HOSTNAME}
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - ./agentdata:/azdo/_work
+      - ./logs:/azdo/logs
+      - ./agentdata/_diag:/azdo/_diag
     restart: unless-stopped
-    networks:
-      - azdo-net
-
-networks:
-  azdo-net:
-    driver: bridge
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep Agent.Listener || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
