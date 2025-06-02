@@ -58,7 +58,7 @@ Then run the agent:
 
 ```bash
 cd agent
-docker-compose up -d
+docker compose up -d
 ```
 
 💡 Ensure your PAT has agent pool and read/write access.
