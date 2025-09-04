@@ -1,0 +1,20 @@
+[Unit]
+Description=Azure DevOps Self-Hosted Agent (Docker)
+Requires=docker.service
+After=docker.service
+
+[Service]
+EnvironmentFile=/opt/azdo-agent/.env
+Restart=always
+RestartSec=5
+# Mount docker.sock so the agent can spin up job containers from pipeline `container:`
+ExecStart=/usr/bin/docker run --rm \
+  --name azdo-agent \
+  --env-file /opt/azdo-agent/.env \
+  -v azdo-agent-data:/azdo \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  azdo-agent:latest
+ExecStop=/usr/bin/docker stop -t 10 azdo-agent
+
+[Install]
+WantedBy=multi-user.target

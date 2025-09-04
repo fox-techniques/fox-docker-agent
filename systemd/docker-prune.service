@@ -1,0 +1,6 @@
+[Unit]
+Description=Docker prune (images/containers/volumes)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/docker system prune -af --volumes
