@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 : "${AZP_URL:?Missing AZP_URL}"
 : "${AZP_TOKEN:?Missing AZP_TOKEN}"
@@ -11,7 +11,7 @@ echo "- URL: $AZP_URL"
 echo "- Pool: $AZP_POOL"
 echo "- Agent name: $AZP_AGENT_NAME"
 
-# Clean stale registration
+# Clean prior registration if persisted
 if [ -e .agent ]; then
   echo "Cleaning previous agent registration..."
   ./config.sh remove --unattended --auth pat --token "$AZP_TOKEN" || true
@@ -24,10 +24,10 @@ fi
   --token "$AZP_TOKEN" \
   --pool "$AZP_POOL" \
   --agent "$AZP_AGENT_NAME" \
-  --acceptTeeEula \
-  --replace
+  --replace \
+  --acceptTeeEula
 
-# Graceful shutdown
+# Graceful cleanup on stop
 cleanup() {
   echo "Cleanup: Removing agent..."
   ./config.sh remove --unattended --auth pat --token "$AZP_TOKEN" || true
@@ -35,5 +35,9 @@ cleanup() {
 trap 'cleanup; exit 130' INT
 trap 'cleanup; exit 143' TERM
 
-# Run the agent
-./run.sh
+# Resilient run loop (auto-restart on transient failures)
+while true; do
+  ./run.sh >> /azdo/logs/agent.log 2>&1 || true
+  echo "Agent exited; restarting in 10s..."
+  sleep 10
+done

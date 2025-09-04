@@ -1,49 +1,34 @@
-# Base image with Python
-FROM python:3.10-slim
+FROM debian:bullseye-slim
 
 ARG AGENT_VERSION=4.255.0
 ENV DEBIAN_FRONTEND=noninteractive
 
-# 1. Install required system dependencies
+# 1) Minimal deps for the ADO agent + docker client
 RUN apt-get update && apt-get install -y \
-    curl git unzip sudo docker.io procps \
+    curl git unzip sudo docker.io procps ca-certificates \
     libicu-dev libssl-dev libkrb5-3 zlib1g \
-    ca-certificates && \
-    apt-get clean
+ && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# 2. Create user and allow Docker access
+# 2) Non-root user (we’ll still run container with docker.sock mounted)
 RUN useradd -m -s /bin/bash azdo && usermod -aG docker azdo
 
-# 3. Install `uv` globally for azdo user
-USER azdo
-RUN curl -Ls https://astral.sh/uv/install.sh | bash
-
-# 4. Add uv to PATH
-ENV PATH="/home/azdo/.local/bin:$PATH"
-
-# 5. Switch back to root and prepare agent directory
-USER root
+# 3) Agent files
 WORKDIR /azdo
-
-# 6. Download and extract Azure DevOps agent
 RUN curl -Ls "https://vstsagentpackage.azureedge.net/agent/${AGENT_VERSION}/vsts-agent-linux-x64-${AGENT_VERSION}.tar.gz" \
-    -o agent.tar.gz && \
-    tar -xzf agent.tar.gz && \
-    chmod +x ./config.sh ./run.sh ./bin/Agent.Listener && \
-    rm agent.tar.gz
+    -o agent.tar.gz \
+ && tar -xzf agent.tar.gz \
+ && chmod +x ./config.sh ./run.sh ./bin/Agent.Listener \
+ && rm agent.tar.gz
 
-# 7. Copy start script into container
+# 4) Entry script
 COPY start.sh /azdo/start.sh
 RUN chmod +x /azdo/start.sh && chown azdo:azdo /azdo/start.sh
 
-# 8. Add Docker healthcheck
-HEALTHCHECK --interval=30s --timeout=10s --start-period=20s CMD pgrep Agent.Listener || exit 1
-
-# 9. Use persistent volume for agent state and logs
+# 5) Healthcheck & persistent state
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s \
+  CMD pgrep Agent.Listener >/dev/null || exit 1
 VOLUME ["/azdo/_work", "/azdo/_diag", "/azdo/logs"]
 
-# 10. Finalize container run as azdo user
+# 6) Run as non-root
 USER azdo
-WORKDIR /azdo
-
 ENTRYPOINT ["/azdo/start.sh"]

@@ -1,6 +1,31 @@
-# fox-docker-agent
+# FOX-docker-agent
+
+# Azure DevOps Agent Stack (Docker + systemd, Ubuntu 22.04)
+
+Self-hosted Azure DevOps agent that:
+- Runs as a Docker container on Ubuntu 22.04
+- Executes pipeline jobs **in containers** (`container:` in YAML)
+- Optionally keeps a “warm” container for faster stage starts
+- Ships logs via **Fluent Bit** (configurable outputs)
+- Auto-maintains the host with **systemd timers** (Docker prune, log rotation)
+
+## Structure
+- `agent/` — Agent image & entrypoint script
+- `systemd/` — Units for the agent, warm container (optional), prune timer, Fluent Bit
+- `fluent-bit/` — Fluent Bit config (tail Docker & agent logs)
+- `pipelines/` — Sample Azure Pipelines YAMLs using job containers
+
+## Quick flow
+1. Build the agent image.
+2. Enable `azdo-agent.service` (uses `/var/run/docker.sock` to launch job containers).
+3. (Optional) Enable `fluent-bit.service` for log forwarding.
+4. (Optional) Enable weekly `docker-prune.timer`.
+5. Point your pipeline to this pool and declare `container:` per job.
+
+
 
 ## Azure DevOps Self-hosted Docker Build Agent + Python Template with `uv`
+
 
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-orange.svg)](https://github.com/fox-techniques/fox-docker-agent/blob/main/LICENSE)
